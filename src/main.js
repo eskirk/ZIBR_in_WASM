@@ -6,7 +6,7 @@
  */
 function checkEqual(value, expected) {
   if (value !== expected) {
-    console.error(`Check equal failed ${value} !== ${expected}`);
+    console.error(`Check equal failed`, value, "!==", expected);
     throw new Error();
   }
 }
@@ -187,12 +187,6 @@ class FundefC {
   }
 }
 
-function isFunction(functionToCheck) {
-  return (
-    functionToCheck && {}.toString.call(functionToCheck) === "[object Function]"
-  );
-}
-
 /**
  *
  * @param {Environment} env
@@ -213,7 +207,7 @@ function addToEnv(env, names, values) {
  * Interps an exprC
  *
  * @param {ExprC} expr - The expression to intepret
- * @param {Environment} environment object
+ * @param {Environment} env object
  * @returns {ZValue}
  */
 function interp(expr, env) {
@@ -223,10 +217,10 @@ function interp(expr, env) {
   if (expr instanceof StrC) {
     return expr.val;
   } else if (expr instanceof IdC) {
-    if (env[expr.name]) {
+    if (env[expr.name] !== undefined) {
       return env[expr.name];
     }
-    throw Error(`No variable ${expr.name} in enviroment ${env}`);
+    throw Error(`No variable ${expr.name} in enviroment ${JSON.stringify(env)}.`);
   } else if (expr instanceof IfC) {
     if (interp(expr.cond, env) === true) {
       return interp(expr.trueVal, env);
@@ -246,8 +240,8 @@ function interp(expr, env) {
           } got ${argValues.length}.`
         );
       }
-      let newEnv = addToEnv(expr.closure, expr.parameters, argValues);
-      return interp(expr.body, newEnv);
+      let newEnv = addToEnv(expr.closure, fnValue.parameters, argValues);
+      return interp(fnValue.body, newEnv);
     } else if (fnValue instanceof Function) {
       if (argValues.length !== 2) {
         throw Error(
@@ -265,6 +259,8 @@ function runTests() {
   primopTests();
   basicValueTests();
   idcTests();
+  functionExprTests();
+  ifCExprTests();
 }
 
 function primopTests() {
@@ -302,10 +298,50 @@ function idcTests() {
   checkEqual(interp(new IdC("three"), test_env), 3);
 }
 
+function ifCExprTests() {
+  checkEqual(
+    interp(
+      new IfC(new IdC("true"), new StrC("true!"), new StrC("false!")),
+      baseEnv
+    ),
+    "true!"
+  );
+  checkEqual(
+    interp(
+      new IfC(new IdC("false"), new StrC("true!"), new StrC("false!")),
+      baseEnv
+    ),
+    "false!"
+  );
+}
+
 function functionExprTests() {
   checkEqual(
     interp(new FunAppC(new IdC("+"), [new NumC(1), new NumC(1)]), baseEnv),
     2
+  );
+
+  checkEqual(
+    JSON.stringify(interp(new FundefC([], new NumC(5)), {})),
+    JSON.stringify(new ZFunc([], new NumC(5), {}))
+  );
+  checkEqual(
+    JSON.stringify(
+      interp(new FundefC(["one", "two", "three"], new StrC("func")), {})
+    ),
+    JSON.stringify(new ZFunc(["one", "two", "three"], new StrC("func"), {}))
+  );
+
+  checkEqual(
+    interp(
+      new FunAppC(new FundefC(["one", "two", "three"], new StrC("func")), [
+        new NumC(1),
+        new NumC(2),
+        new NumC(3)
+      ]),
+      baseEnv
+    ),
+    "func"
   );
 }
 
