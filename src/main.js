@@ -66,18 +66,21 @@ fetch("../out/main.wasm")
       "/": primop.div,
       "<=": primop.leq,
       "equal?": primop.is_eq,
-      "true": true,
-      "false": false
+      true: true,
+      false: false
     };
 
     // call top-interp here
-    document.getElementById("input").textContent = "['+', [['+', [21, 21]], ['+', [21, 21]]]]";
-    document.getElementById("result").textContent = topInterp(['+', [['+', [21, 21]], ['+', [21, 21]]]]);
+    document.getElementById("input").textContent =
+      "['+', [['+', [21, 21]], ['+', [21, 21]]]]";
+    document.getElementById("result").textContent = topInterp([
+      "+",
+      [["+", [21, 21]], ["+", [21, 21]]]
+    ]);
     runTests();
   })
   .catch(console.error);
 
-  
 /**
  *
  * Definiton of ExprC
@@ -199,8 +202,8 @@ function addToEnv(env, names, values) {
 }
 
 /**
- * 
- * @param {Array<Array>} sexp 
+ *
+ * @param {Array<Array>} sexp
  */
 function topInterp(sexp) {
   return interp(parse(sexp), baseEnv);
@@ -223,7 +226,9 @@ function interp(expr, env) {
     if (env[expr.name] !== undefined) {
       return env[expr.name];
     }
-    throw Error(`No variable ${expr.name} in enviroment ${JSON.stringify(env)}.`);
+    throw Error(
+      `No variable ${expr.name} in enviroment ${JSON.stringify(env)}.`
+    );
   } else if (expr instanceof IfC) {
     if (interp(expr.cond, env) === true) {
       return interp(expr.trueVal, env);
@@ -264,11 +269,15 @@ function runTests() {
   idcTests();
   functionExprTests();
   ifCExprTests();
+  parseTestCases();
 }
 
-function topInterpTests() {
-  
+function parseTestCases() {
+  checkEqual(JSON.stringify(parse("Hello")), JSON.stringify(new StrC("Hello")));
+  checkEqual(JSON.stringify(parse("`x")), JSON.stringify(new IdC("x")));
 }
+
+function topInterpTests() {}
 
 function primopTests() {
   checkEqual(primop.add(2, 2), 4);
@@ -352,38 +361,41 @@ function functionExprTests() {
   );
 }
 
-
 /**
  * Parses a String of sexp into an ExprC
- * 
- * @param {Array} sexp - The String of expressions to parse
- * @returns {ExprC} 
+ *
+ * @param {Array | string | number} sexp - The String of expressions to parse
+ * @returns {ExprC}
  */
 function parse(sexp) {
-  if (typeof sexp[0] === "string") {
-    return new FunAppC(new IdC(sexp[0]), parse(sexp.slice(1)[0]));
+  if (sexp instanceof Array && typeof sexp[0] === "string") {
+    return new FunAppC(parse(sexp[0]), sexp.slice(1).map(exp => parse(exp)));
   } else if (typeof sexp === "number") {
     return new NumC(sexp);
+  } else if (typeof sexp === "string") {
+    if (sexp.length > 1 && sexp[0] === "`") {
+      return new IdC(sexp.substring(1));
+    } else {
+      return new StrC(sexp);
+    }
   } else if (typeof sexp === "object") {
     return sexp.map(exp => parse(exp));
   } else {
-    console.log(`no idea, ${sexp}`)
-    return null;
+    throw Error(`Cant parse ${JSON.stringify(sexp)}`);
   }
 }
 
 checkEqual(interp(new NumC(42), {}), 42);
 checkEqual(interp(new StrC("hello"), {}), "hello");
-checkEqual(interp(new IdC("x"), {x: 42}), 42);
+checkEqual(interp(new IdC("x"), { x: 42 }), 42);
 checkEqual(interp(new StrC("yes")), "yes");
 checkEqual(interp(new StrC("value")), "value");
 
-let test_env = {one : 1, two : 2, three : 3, four : "forth_value"};
+let test_env = { one: 1, two: 2, three: 3, four: "forth_value" };
 
-checkEqual(interp (new IdC("one"), test_env), 1);
-checkEqual(interp (new IdC("four"), test_env), "forth_value");
-checkEqual(interp (new IdC("three"), test_env), 3);
-
+checkEqual(interp(new IdC("one"), test_env), 1);
+checkEqual(interp(new IdC("four"), test_env), "forth_value");
+checkEqual(interp(new IdC("three"), test_env), 3);
 
 let trivalExpr = new NumC(42);
 checkEqual(interp(trivalExpr), 42);
