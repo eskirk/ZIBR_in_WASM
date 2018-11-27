@@ -161,6 +161,7 @@ function interp(expr, env) {
 let trivalExpr = new NumC(42);
 checkEqual(interp(trivalExpr), 42);
 
+
 primop = {};
 fetch("../out/main.wasm")
   .then(response => response.arrayBuffer())
@@ -172,6 +173,8 @@ fetch("../out/main.wasm")
     primop.sub = instance.exports.sub;
     primop.mult = instance.exports.mult;
     primop.div = instance.exports.div;
+    primop.leq = instance.exports.leq;
+    primop.is_equal = instance.exports.is_equal;
 
     checkEqual(instance.exports.add(2, 2), 4);
   })
