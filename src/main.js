@@ -71,10 +71,13 @@ fetch("../out/main.wasm")
     };
 
     // call top-interp here
-    document.getElementById("result").textContent = top_interp(['+', [21, 21]]);
+    document.getElementById("input").textContent = "['+', [['+', [21, 21]], ['+', [21, 21]]]]";
+    document.getElementById("result").textContent = topInterp(['+', [['+', [21, 21]], ['+', [21, 21]]]]);
     runTests();
   })
   .catch(console.error);
+
+  
 /**
  *
  * Definiton of ExprC
@@ -199,8 +202,8 @@ function addToEnv(env, names, values) {
  * 
  * @param {Array<Array>} sexp 
  */
-function top_interp(sexp) {
-  interp(parse(sexp), baseEnv);
+function topInterp(sexp) {
+  return interp(parse(sexp), baseEnv);
 }
 
 /**
@@ -261,6 +264,10 @@ function runTests() {
   idcTests();
   functionExprTests();
   ifCExprTests();
+}
+
+function topInterpTests() {
+  
 }
 
 function primopTests() {
