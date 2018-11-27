@@ -67,9 +67,9 @@ class StrC {
 class IfC {
   /**
    *Creates an instance of IfC.
-   * @param {*} cond
-   * @param {*} trueVal
-   * @param {*} falseVal
+   * @param {ExprC} cond
+   * @param {ExprC} trueVal
+   * @param {ExprC} falseVal
    * @memberof IfC
    */
   constructor(cond, trueVal, falseVal) {
@@ -82,8 +82,8 @@ class IfC {
 class FunAppC {
   /**
    *Creates an instance of FunAppC.
-   * @param {*} fn
-   * @param {Array<*>} args
+   * @param {ExprC} fn
+   * @param {Array<ExprC>} args
    * @memberof FunAppC
    */
   constructor(fn, args) {
@@ -96,7 +96,7 @@ class FundefC {
   /**
    *Creates an instance of FundefC.
    * @param {Array<string>} parameters
-   * @param {*} body
+   * @param {ExprC} body
    * @memberof FundefC
    */
   constructor(parameters, body) {
@@ -110,7 +110,6 @@ class FundefC {
  *
  * @param {ExprC} expr - The expression to intepret
  * @param {object} environment object
- * @param {*} instance - A webassembly instance
  * @returns {ZValue}
  */
 function interp(expr, env) {
@@ -125,7 +124,7 @@ function interp(expr, env) {
     }
     throw Error(`No variable ${expr.name} in enviroment ${env}`);
   } else if (expr instanceof IfC) {
-    if (interp(expr.instance, env) === true) {
+    if (interp(expr.cond, env) === true) {
       return interp(expr.trueVal, env);
     } else {
       return interp(expr.falseVal, env);
