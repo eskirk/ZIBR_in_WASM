@@ -26,7 +26,9 @@ fetch("../out/main.wasm")
     primop.div = instance.exports.div;
     primop.leq = instance.exports.leq;
     primop.is_eq = instance.exports.is_equal;
-
+  })
+  .then(() => {
+    document.getElementById("result").textContent = primop.mult(20, 4);
     checkEqual(instance.exports.add(2, 2), 4);
   }).catch(console.error);
 
@@ -183,6 +185,17 @@ function interp(expr, env) {
                      (error 'ZIBR "Wrong number of arguments passed to function"))]
          [other (error 'ZIBR "Could not apply ~v which evaluates to ~v its not a function" func fn-value)]))]))
          */
+
+
+/**
+ * Parses a String of sexp into an ExprC
+ * 
+ * @param {String} sexp - The String of expressions to parse
+ * @returns {ExprC} 
+ */
+function parse(sexp) {
+
+}
 
 let trivalExpr = new NumC(42);
 checkEqual(interp(trivalExpr), 42);

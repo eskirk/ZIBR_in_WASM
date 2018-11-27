@@ -28,7 +28,6 @@
       get_local $lhs 
       get_local $rhs
       i32.le_s)
-  
 
   (export "add" (func $add))
   (export "sub" (func $sub))
