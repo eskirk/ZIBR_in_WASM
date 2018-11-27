@@ -7,9 +7,9 @@
 function checkEqual(value, expected) {
   if (value !== expected) {
     console.error(`Check equal failed ${value} !== ${expected}`);
+    throw new Error();
   }
 }
-
 
 /**
  * Checks that the thunk throws an error message which contains the expected message.
@@ -24,22 +24,32 @@ function checkExn(thunk, expectedMsg) {
     thunk();
   } catch (error) {
     if (!error.message.includes(expectedMsg)) {
-      console.error(`checkExn: error message ${error.message} did not contain expected message ${expectedMsg}.`);
+      console.error(
+        `checkExn: error message ${
+          error.message
+        } did not contain expected message ${expectedMsg}.`
+      );
     }
     return;
   }
-  console.error('Check exn did not reutrn an error for', thunk, 'expected', errorMsg);
+  console.error(
+    "Check exn did not reutrn an error for",
+    thunk,
+    "expected",
+    errorMsg
+  );
 }
 
 /**
  * @constant add   {+ lhs rhs}     = lhs + rhs
  * @constant sub   {- lhs rhs}     = lhs - rhs
- * @constant mult  {* lhs rhs}     = lhs * rhs  
- * @constant div   {/ lhs rhs}     = lhs / rhs  
+ * @constant mult  {* lhs rhs}     = lhs * rhs
+ * @constant div   {/ lhs rhs}     = lhs / rhs
  * @constant leq   {<= lhs rhs}    = lhs <= rhs
  * @constant is_eq {is_eq lhs rhs} = lhs == rhs
  */
 let primop = {};
+let baseEnv = {};
 
 fetch("../out/main.wasm")
   .then(response => response.arrayBuffer())
@@ -55,25 +65,23 @@ fetch("../out/main.wasm")
     primop.is_eq = instance.exports.is_equal;
   })
   .then(() => {
-    // quick tests
-    checkEqual(instance.exports.add(2, 2), 4);
-    checkEqual(instance.exports.mult(2, 2), 4);
-    checkEqual(instance.exports.div(2, 2), 1);
-    checkEqual(instance.exports.sub(1, 1), 0);
-    checkEqual(instance.exports.sub(2, 1), 1);
-    checkEqual(instance.exports.sub(10, 6), 4);
-    checkEqual(instance.exports.mult(2, 4), 8);
-    checkEqual(instance.exports.mult(25, 4), 100);
-    checkEqual(instance.exports.div(4, 2), 2);
-    checkEqual(instance.exports.div(10, 5), 2);
-    checkEqual(instance.exports.is_equal(2, 4), 0);
-    checkEqual(instance.exports.is_equal(4, 4), 1);
-    checkEqual(instance.exports.leq(2, 4), 1);
-    checkEqual(instance.exports.leq(10, 4), 0);
+    baseEnv = {
+      "+": primop.add,
+      "-": primop.sub,
+      "*": primop.mult,
+      "/": primop.div,
+      "<=": primop.leq,
+      "equal?": primop.is_eq,
+      "true": true,
+      "false": false
+    };
 
     // call top-interp here
     document.getElementById("result").textContent = interp(new NumC(42));
-  }).catch(console.error);
+
+    runTests();
+  })
+  .catch(console.error);
 
 /**
  *
@@ -82,7 +90,7 @@ fetch("../out/main.wasm")
  *
  * Definiton of ZValue
  * @typedef {number|string|boolean|ZFunc|PrimOp} ZValue
- * 
+ *
  * Definiton of a PrimOp
  * @typedef {(op1:any, op2:any) => any} PrimOp
  *
@@ -179,26 +187,27 @@ class FundefC {
   }
 }
 
-
 function isFunction(functionToCheck) {
-  return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
- }
+  return (
+    functionToCheck && {}.toString.call(functionToCheck) === "[object Function]"
+  );
+}
 
 /**
  *
  * @param {Environment} env
  * @param {Array<string>} names
  * @param {Array<ZValue>} values
- * 
+ *
  * @returns Environment
  */
 function addToEnv(env, names, values) {
-  let clone = {...env};
+  let clone = { ...env };
   for (let i = 0; i < names.length; i++) {
     clone[names[i]] = values[i];
   }
   return clone;
- }
+}
 
 /**
  * Interps an exprC
@@ -227,45 +236,86 @@ function interp(expr, env) {
   } else if (expr instanceof FundefC) {
     return new ZFunc(expr.parameters, expr.body, env);
   } else if (expr instanceof FunAppC) {
-    const argValues = expr.args.map(arg =>  interp(arg, env));
+    const argValues = expr.args.map(arg => interp(arg, env));
     const fnValue = interp(expr.fn, env);
     if (fnValue instanceof ZFunc) {
-      if (argValues.length !== fnValue.parameters.length ) {
-        throw Error(`Function given wrong number of parameters wanted ${fn.parameters.length} got ${argValues.length}.`);
+      if (argValues.length !== fnValue.parameters.length) {
+        throw Error(
+          `Function given wrong number of parameters wanted ${
+            fn.parameters.length
+          } got ${argValues.length}.`
+        );
       }
       let newEnv = addToEnv(expr.closure, expr.parameters, argValues);
       return interp(expr.body, newEnv);
     } else if (fnValue instanceof Function) {
-      if (argValues.length !== 2 ) {
-        throw Error(`primop given wrong number of parameters wanted ${2} got ${argValues.length}.`);
+      if (argValues.length !== 2) {
+        throw Error(
+          `primop given wrong number of parameters wanted ${2} got ${
+            argValues.length
+          }.`
+        );
       }
       return fnValue(...argValues);
     }
   }
 }
 
+function runTests() {
+  primopTests();
+  basicValueTests();
+  idcTests();
+}
 
-checkEqual(interp(new NumC(42), {}), 42);
-checkEqual(interp(new StrC("hello"), {}), "hello");
-checkEqual(interp(new IdC("x"), {x: 42}), 42);
-checkExn(() => interp(new IdC("y"), {x: 42}), "variable");
-checkEqual(interp(new StrC("yes")), "yes");
-checkEqual(interp(new StrC("value")), "value");
+function primopTests() {
+  checkEqual(primop.add(2, 2), 4);
+  checkEqual(primop.mult(2, 2), 4);
+  checkEqual(primop.div(2, 2), 1);
+  checkEqual(primop.sub(1, 1), 0);
+  checkEqual(primop.sub(2, 1), 1);
+  checkEqual(primop.sub(10, 6), 4);
+  checkEqual(primop.mult(2, 4), 8);
+  checkEqual(primop.mult(25, 4), 100);
+  checkEqual(primop.div(4, 2), 2);
+  checkEqual(primop.div(10, 5), 2);
+  checkEqual(primop.is_eq(2, 4), 0);
+  checkEqual(primop.is_eq(4, 4), 1);
+  checkEqual(primop.leq(2, 4), 1);
+  checkEqual(primop.leq(10, 4), 0);
+}
 
-let test_env = {one : 1, two : 2, three : 3, four : "forth_value"};
+function basicValueTests() {
+  checkEqual(interp(new NumC(42), {}), 42);
+  checkEqual(interp(new StrC("hello"), {}), "hello");
+  checkEqual(interp(new IdC("x"), { x: 42 }), 42);
+  checkEqual(interp(new StrC("yes")), "yes");
+  checkEqual(interp(new StrC("value")), "value");
 
-checkEqual(interp (new IdC("one"), test_env), 1);
-checkEqual(interp (new Idc("four"), test_env), "forth_value");
-checkEqual(interp (new IdC("three"), test_env), 2);
+  checkExn(() => interp(new IdC("y"), { x: 42 }), "variable");
+}
+
+function idcTests() {
+  let test_env = { one: 1, two: 2, three: 3, four: "forth_value" };
+
+  checkEqual(interp(new IdC("one"), test_env), 1);
+  checkEqual(interp(new IdC("four"), test_env), "forth_value");
+  checkEqual(interp(new IdC("three"), test_env), 3);
+}
+
+function functionExprTests() {
+  checkEqual(
+    interp(new FunAppC(new IdC("+"), [new NumC(1), new NumC(1)]), baseEnv),
+    2
+  );
+}
+
 /**
  * Parses a String of sexp into an ExprC
- * 
+ *
  * @param {String} sexp - The String of expressions to parse
- * @returns {ExprC} 
+ * @returns {ExprC}
  */
-function parse(sexp) {
-
-}
+function parse(sexp) {}
 
 let trivalExpr = new NumC(42);
 checkEqual(interp(trivalExpr), 42);
