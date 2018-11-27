@@ -5,6 +5,32 @@ function checkEqual(value, expected) {
 }
 
 /**
+ * @constant add   {+ lhs rhs}     = lhs + rhs
+ * @constant sub   {- lhs rhs}     = lhs - rhs
+ * @constant mult  {* lhs rhs}     = lhs * rhs  
+ * @constant div   {/ lhs rhs}     = lhs / rhs  
+ * @constant leq   {<= lhs rhs}    = lhs <= rhs
+ * @constant is_eq {is_eq lhs rhs} = lhs == rhs
+ */
+let primop = {};
+
+fetch("../out/main.wasm")
+  .then(response => response.arrayBuffer())
+  .then(bytes => WebAssembly.instantiate(bytes))
+  .then(results => {
+    instance = results.instance;
+
+    primop.add = instance.exports.add;
+    primop.sub = instance.exports.sub;
+    primop.mult = instance.exports.mult;
+    primop.div = instance.exports.div;
+    primop.leq = instance.exports.leq;
+    primop.is_eq = instance.exports.is_equal;
+
+    checkEqual(instance.exports.add(2, 2), 4);
+  }).catch(console.error);
+
+/**
  *
  * Definiton of ExprC
  * @typedef {(NumC|IdC|StrC|IfC|FunAppC|FundefC)} ExprC
@@ -160,22 +186,3 @@ function interp(expr, env) {
 
 let trivalExpr = new NumC(42);
 checkEqual(interp(trivalExpr), 42);
-
-
-primop = {};
-fetch("../out/main.wasm")
-  .then(response => response.arrayBuffer())
-  .then(bytes => WebAssembly.instantiate(bytes))
-  .then(results => {
-    instance = results.instance;
-
-    primop.add = instance.exports.add;
-    primop.sub = instance.exports.sub;
-    primop.mult = instance.exports.mult;
-    primop.div = instance.exports.div;
-    primop.leq = instance.exports.leq;
-    primop.is_equal = instance.exports.is_equal;
-
-    checkEqual(instance.exports.add(2, 2), 4);
-  })
-  .catch(console.error);
