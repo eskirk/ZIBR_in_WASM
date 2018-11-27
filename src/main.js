@@ -253,6 +253,9 @@ checkEqual(interp(new StrC("yes")), "yes");
 checkEqual(interp(new StrC("value")), "value");
 
 let test_env = {true : true, false : false, one : 1, two : 2, three : 3, four : "forth_value"};
+checkEqual(interp(new FundefC([], new NumC(5)),test_env), new ZFunc([], new NumC(5), test-env));
+checkEqual(interp(new FundefC(["one", "two", "three"], new StrC("func")), test_env), 
+new ZFunc(["one", "two", "three"], new StrC("func"), test_env));
 checkEqual(interp(new IfC(new IdC("false"), new NumC(5), new NumC(9)), test_env), 3);
 checkEqual(interp(new IfC(new IdC("true"), new NumC(5), new NumC(9)), test_env), 5);
 checkEqual(interp (new IdC("one"), test_env), 1);
