@@ -252,8 +252,9 @@ checkExn(() => interp(new IdC("y"), {x: 42}), "variable");
 checkEqual(interp(new StrC("yes")), "yes");
 checkEqual(interp(new StrC("value")), "value");
 
-let test_env = {one : 1, two : 2, three : 3, four : "forth_value"};
-
+let test_env = {true : true, false : false, one : 1, two : 2, three : 3, four : "forth_value"};
+checkEqual(interp(new IfC(new IdC("false"), new NumC(5), new NumC(9)), test_env), 3);
+checkEqual(interp(new IfC(new IdC("true"), new NumC(5), new NumC(9)), test_env), 5);
 checkEqual(interp (new IdC("one"), test_env), 1);
 checkEqual(interp (new Idc("four"), test_env), "forth_value");
 checkEqual(interp (new IdC("three"), test_env), 2);
