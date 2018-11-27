@@ -55,8 +55,24 @@ fetch("../out/main.wasm")
     primop.is_eq = instance.exports.is_equal;
   })
   .then(() => {
-    document.getElementById("result").textContent = primop.mult(20, 4);
+    // quick tests
     checkEqual(instance.exports.add(2, 2), 4);
+    checkEqual(instance.exports.mult(2, 2), 4);
+    checkEqual(instance.exports.div(2, 2), 1);
+    checkEqual(instance.exports.sub(1, 1), 0);
+    checkEqual(instance.exports.sub(2, 1), 1);
+    checkEqual(instance.exports.sub(10, 6), 4);
+    checkEqual(instance.exports.mult(2, 4), 8);
+    checkEqual(instance.exports.mult(25, 4), 100);
+    checkEqual(instance.exports.div(4, 2), 2);
+    checkEqual(instance.exports.div(10, 5), 2);
+    checkEqual(instance.exports.is_equal(2, 4), 0);
+    checkEqual(instance.exports.is_equal(4, 4), 1);
+    checkEqual(instance.exports.leq(2, 4), 1);
+    checkEqual(instance.exports.leq(10, 4), 0);
+
+    // call top-interp here
+    document.getElementById("result").textContent = interp(new NumC(42));
   }).catch(console.error);
 
 /**
@@ -233,7 +249,14 @@ checkEqual(interp(new NumC(42), {}), 42);
 checkEqual(interp(new StrC("hello"), {}), "hello");
 checkEqual(interp(new IdC("x"), {x: 42}), 42);
 checkExn(() => interp(new IdC("y"), {x: 42}), "variable");
+checkEqual(interp(new StrC("yes")), "yes");
+checkEqual(interp(new StrC("value")), "value");
 
+let test_env = {one : 1, two : 2, three : 3, four : "forth_value"};
+
+checkEqual(interp (new IdC("one"), test_env), 1);
+checkEqual(interp (new Idc("four"), test_env), "forth_value");
+checkEqual(interp (new IdC("three"), test_env), 2);
 /**
  * Parses a String of sexp into an ExprC
  * 
