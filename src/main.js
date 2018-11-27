@@ -1,7 +1,34 @@
+/**
+ * Checks if the value equals the expected value, logs an error if it does not.
+ *
+ * @param {*} value - Value to check
+ * @param {*} expected - Expected value
+ */
 function checkEqual(value, expected) {
   if (value !== expected) {
     console.error(`Check equal failed ${value} !== ${expected}`);
   }
+}
+
+
+/**
+ * Checks that the thunk throws an error message which contains the expected message.
+ * Logs an error if it doesn't
+ *
+ * @param {*} thunk - A function with no arguments that should trigger an error
+ * @param {string} expectedMsg - A substring of the desired error message.
+ * @returns
+ */
+function checkExn(thunk, expectedMsg) {
+  try {
+    thunk();
+  } catch (error) {
+    if (!error.message.includes(expectedMsg)) {
+      console.error(`checkExn: error message ${error.message} did not contain expected message ${expectedMsg}.`);
+    }
+    return;
+  }
+  console.error('Check exn did not reutrn an error for', thunk, 'expected', errorMsg);
 }
 
 /**
@@ -201,9 +228,11 @@ function interp(expr, env) {
   }
 }
 
+
 checkEqual(interp(new NumC(42), {}), 42);
 checkEqual(interp(new StrC("hello"), {}), "hello");
 checkEqual(interp(new IdC("x"), {x: 42}), 42);
+checkExn(() => interp(new IdC("y"), {x: 42}), "variable");
 
 /**
  * Parses a String of sexp into an ExprC
