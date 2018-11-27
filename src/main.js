@@ -28,8 +28,14 @@ fetch("../out/main.wasm")
     primop.is_eq = instance.exports.is_equal;
   })
   .then(() => {
-    document.getElementById("result").textContent = primop.mult(20, 4);
+    // quick tests
     checkEqual(instance.exports.add(2, 2), 4);
+    checkEqual(instance.exports.mult(2, 2), 4);
+    checkEqual(instance.exports.div(2, 2), 1);
+    checkEqual(instance.exports.sub(1, 1), 0);
+
+    // call top-interp here
+    document.getElementById("result").textContent = interp(new NumC(42));
   }).catch(console.error);
 
 /**
