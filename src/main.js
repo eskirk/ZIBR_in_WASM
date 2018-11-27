@@ -1,9 +1,3 @@
-/**
- * Checks if the value equals the expected value, logs an error if it does not.
- *
- * @param {*} value - Value to check
- * @param {*} expected - Expected value
- */
 function checkEqual(value, expected) {
   if (value !== expected) {
     console.error(`Check equal failed ${value} !== ${expected}`);
@@ -77,12 +71,10 @@ fetch("../out/main.wasm")
     };
 
     // call top-interp here
-    document.getElementById("result").textContent = interp(new NumC(42));
-
+    document.getElementById("result").textContent = top_interp(['+', [21, 21]]);
     runTests();
   })
   .catch(console.error);
-
 /**
  *
  * Definiton of ExprC
@@ -210,6 +202,14 @@ function addToEnv(env, names, values) {
 }
 
 /**
+ * 
+ * @param {Array<Array>} sexp 
+ */
+function top_interp(sexp) {
+  interp(parse(sexp), baseEnv);
+}
+
+/**
  * Interps an exprC
  *
  * @param {ExprC} expr - The expression to intepret
@@ -309,13 +309,38 @@ function functionExprTests() {
   );
 }
 
+
 /**
  * Parses a String of sexp into an ExprC
- *
- * @param {String} sexp - The String of expressions to parse
- * @returns {ExprC}
+ * 
+ * @param {Array} sexp - The String of expressions to parse
+ * @returns {ExprC} 
  */
-function parse(sexp) {}
+function parse(sexp) {
+  if (typeof sexp[0] === "string") {
+    return new FunAppC(new IdC(sexp[0]), parse(sexp.slice(1)[0]));
+  } else if (typeof sexp === "number") {
+    return new NumC(sexp);
+  } else if (typeof sexp === "object") {
+    return sexp.map(exp => parse(exp));
+  } else {
+    console.log(`no idea, ${sexp}`)
+    return null;
+  }
+}
+
+checkEqual(interp(new NumC(42), {}), 42);
+checkEqual(interp(new StrC("hello"), {}), "hello");
+checkEqual(interp(new IdC("x"), {x: 42}), 42);
+checkEqual(interp(new StrC("yes")), "yes");
+checkEqual(interp(new StrC("value")), "value");
+
+let test_env = {one : 1, two : 2, three : 3, four : "forth_value"};
+
+checkEqual(interp (new IdC("one"), test_env), 1);
+checkEqual(interp (new IdC("four"), test_env), "forth_value");
+checkEqual(interp (new IdC("three"), test_env), 3);
+
 
 let trivalExpr = new NumC(42);
 checkEqual(interp(trivalExpr), 42);
