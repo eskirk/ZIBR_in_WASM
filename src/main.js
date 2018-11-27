@@ -1,4 +1,3 @@
-
 function checkEqual(value, expected) {
   if (value !== expected) {
     console.error(`Check equal failed ${value} !== ${expected}`);
@@ -6,40 +5,41 @@ function checkEqual(value, expected) {
 }
 
 /**
- * 
+ *
  * Definiton of ExprC
  * @typedef {(NumC|IdC|StrC|IfC|FunAppC|FundefC)} ExprC
- * 
+ *
  * Definiton of ZValue
  * @typedef {number|string|boolean|ZFunc} ZValue
- * 
+ *
  * Definiton of an environment
  * @typedef {Object.<string, ZValue>} Environment
  */
-// (struct ZFunc ([parameters : (Listof Symbol)] [body : ExprC] [closure : Environment]) #:transparent)
 
- class ZFunc {
-   /**
-    *Creates an instance of ZFunc.
-    * @param {Array<string>} parameters
-    * @param {ExprC} body
-    * @param {Environment} closure
-    * @memberof ZFunc
-    */
-   constructor (parameters, body, closure) {
-     this.parameters = parameters;
-     this.body = body;
-     this.closure = closure;
-   }
- }
+class ZFunc {
+  /**
+   *Creates an instance of ZFunc.
+   * @param {Array<string>} parameters
+   * @param {ExprC} body
+   * @param {Environment} closure
+   * @memberof ZFunc
+   */
+  constructor(parameters, body, closure) {
+    this.parameters = parameters;
+    this.body = body;
+    this.closure = closure;
+  }
+}
 
-class NumC  { 
+class NumC {
   /**
    *Creates an instance of NumC.
    * @param {number} num
    * @memberof NumC
    */
-  constructor(num) {this.num = num;}
+  constructor(num) {
+    this.num = num;
+  }
 }
 
 class IdC {
@@ -48,7 +48,9 @@ class IdC {
    * @param {string} name
    * @memberof IdC
    */
-  constructor(name) {this.name = name;}
+  constructor(name) {
+    this.name = name;
+  }
 }
 
 class StrC {
@@ -57,7 +59,9 @@ class StrC {
    * @param {string} val
    * @memberof StrC
    */
-  constructor(val) {this.val = val;}
+  constructor(val) {
+    this.val = val;
+  }
 }
 
 class IfC {
@@ -105,14 +109,15 @@ class FundefC {
  * Interps an experC
  *
  * @param {ExprC} expr - The expression to intepret
- * @param {object} environment object 
+ * @param {object} environment object
  * @param {*} instance - A webassembly instance
  * @returns {ZValue}
  */
 function interp(expr, env) {
   if (expr instanceof NumC) {
     return expr.num;
-  }  if (expr instanceof StrC) {
+  }
+  if (expr instanceof StrC) {
     return expr.val;
   } else if (expr instanceof IdC) {
     if (env[expr.name]) {
@@ -126,7 +131,7 @@ function interp(expr, env) {
       return interp(expr.falseVal, env);
     }
   } else if (expr instanceof FundefC) {
-    return {}
+    return {};
   } else if (expr instanceof FunAppC) {
     throw Error("Not implemented");
   }
@@ -157,16 +162,18 @@ function interp(expr, env) {
 let trivalExpr = new NumC(42);
 checkEqual(interp(trivalExpr), 42);
 
-
-
-
-fetch('../out/main.wasm').then(response =>
-    response.arrayBuffer()
-  ).then(bytes => WebAssembly.instantiate(bytes)).then(results => {
+primop = {};
+fetch("../out/main.wasm")
+  .then(response => response.arrayBuffer())
+  .then(bytes => WebAssembly.instantiate(bytes))
+  .then(results => {
     instance = results.instance;
 
+    primop.add = instance.exports.add;
+    primop.sub = instance.exports.sub;
+    primop.mult = instance.exports.mult;
+    primop.div = instance.exports.div;
+
     checkEqual(instance.exports.add(2, 2), 4);
-    
-  }).catch(console.error);
-  
-  
+  })
+  .catch(console.error);
