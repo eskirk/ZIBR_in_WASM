@@ -10,7 +10,10 @@ function checkEqual(value, expected) {
  * @typedef {(NumC|IdC|StrC|IfC|FunAppC|FundefC)} ExprC
  *
  * Definiton of ZValue
- * @typedef {number|string|boolean|ZFunc} ZValue
+ * @typedef {number|string|boolean|ZFunc|PrimOp} ZValue
+ * 
+ * Definiton of a PrimOp
+ * @typedef {(op1:any, op2:any) => any} PrimOp
  *
  * Definiton of an environment
  * @typedef {Object.<string, ZValue>} Environment
@@ -105,11 +108,32 @@ class FundefC {
   }
 }
 
+
+function isFunction(functionToCheck) {
+  return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
+ }
+
 /**
- * Interps an experC
+ *
+ * @param {Environment} env
+ * @param {Array<string>} names
+ * @param {Array<ZValue>} values
+ * 
+ * @returns Environment
+ */
+function addToEnv(env, names, values) {
+  let clone = {...env};
+  for (let i = 0; i < names.length; i++) {
+    clone[names[i]] = values[i];
+  }
+  return clone;
+ }
+
+/**
+ * Interps an exprC
  *
  * @param {ExprC} expr - The expression to intepret
- * @param {object} environment object
+ * @param {Environment} environment object
  * @returns {ZValue}
  */
 function interp(expr, env) {
@@ -130,36 +154,28 @@ function interp(expr, env) {
       return interp(expr.falseVal, env);
     }
   } else if (expr instanceof FundefC) {
-    return {};
+    return new ZFunc(expr.parameters, expr.body, env);
   } else if (expr instanceof FunAppC) {
-    throw Error("Not implemented");
+    const argValues = expr.args.map(arg =>  interp(arg, env));
+    const fnValue = interp(expr.fn, env);
+    if (fnValue instanceof ZFunc) {
+      if (argValues.length !== fnValue.parameters.length ) {
+        throw Error(`Function given wrong number of parameters wanted ${fn.parameters.length} got ${argValues.length}.`);
+      }
+      let newEnv = addToEnv(expr.closure, expr.parameters, argValues);
+      return interp(expr.body, newEnv);
+    } else if (fnValue instanceof Function) {
+      if (argValues.length !== 2 ) {
+        throw Error(`primop given wrong number of parameters wanted ${2} got ${argValues.length}.`);
+      }
+      return fnValue(...argValues);
+    }
   }
 }
 
-/*[(NumC n) n]
-    [(StrC s) s]
-    [(IdC var) (hash-ref env var
-                         (λ () (error 'ZIBR "No value found for variable '~v'" var)))]
-    [(IfC cond true-val false-val)
-     (let ([cond-res (interp cond env)])
-       (if (boolean? cond-res)
-           (if cond-res (interp true-val env) (interp false-val env))
-           (error 'ZIBR " condition of if statment evaluated to ~v which is not a boolean" cond)))]
-    [(FundefC params body) (ZFunc params body env)]
-    [(FuncAppC func args)
-     (let ([arg-vals (map (λ ([arg : ExprC]) (interp arg env)) args)]
-           [fn-value (interp func env)])
-       (match fn-value
-         [[ZPrimOp _] (apply-primop fn-value arg-vals)]
-         [[ZFunc params body closure] (if (= (length params) (length args))
-                     (let ([new-env (add-to-env closure params arg-vals)])
-                       (interp body new-env))
-                     (error 'ZIBR "Wrong number of arguments passed to function"))]
-         [other (error 'ZIBR "Could not apply ~v which evaluates to ~v its not a function" func fn-value)]))]))
-         */
-
-let trivalExpr = new NumC(42);
-checkEqual(interp(trivalExpr), 42);
+checkEqual(interp(new NumC(42), {}), 42);
+checkEqual(interp(new StrC("hello"), {}), "hello");
+checkEqual(interp(new IdC("x"), {x: 42}), 42);
 
 primop = {};
 fetch("../out/main.wasm")
