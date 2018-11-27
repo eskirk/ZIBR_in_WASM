@@ -17,10 +17,10 @@
    (func $div (param $lhs f32) (param $rhs f32) (result f32)
       get_local $lhs
       get_local $rhs
-      f32.div))
+      f32.div)
 
   (export "add" (func $add))
   (export "sub" (func $sub))
-  (export "mul" (func $mul))
+  (export "mult" (func $mult))
   (export "div" (func $div))
 )

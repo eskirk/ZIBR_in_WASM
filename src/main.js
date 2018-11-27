@@ -1,8 +1,14 @@
+primop = {}
+
 fetch('../out/main.wasm').then(response =>
-    response.arrayBuffer()
+      response.arrayBuffer()
   ).then(bytes => WebAssembly.instantiate(bytes)).then(results => {
-    instance = results.instance;
-    document.getElementById("result").textContent = instance.exports.add(5, 5);
+      instance = results.instance;
+
+      primop.add = instance.exports.add;
+      primop.sub = instance.exports.sub;
+      primop.mult = instance.exports.mult;
+      primop.div = instance.exports.div;
   }).catch(console.error);
   
   
