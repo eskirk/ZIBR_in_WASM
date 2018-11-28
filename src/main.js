@@ -275,6 +275,10 @@ function runTests() {
 function parseTestCases() {
   checkEqual(JSON.stringify(parse("Hello")), JSON.stringify(new StrC("Hello")));
   checkEqual(JSON.stringify(parse("`x")), JSON.stringify(new IdC("x")));
+  checkEqual(
+    JSON.stringify(parse(["lam", ["x", "y"], "`y"])),
+    JSON.stringify(new FundefC(["x", "y"], new IdC("y")))
+  );
 }
 
 function topInterpTests() {}
@@ -368,7 +372,11 @@ function functionExprTests() {
  * @returns {ExprC}
  */
 function parse(sexp) {
-  if (sexp instanceof Array && typeof sexp[0] === "string") {
+  if (sexp instanceof Array && sexp[0] === "if") {
+    return new IfC(parse(sexp[0]), parse(sexp[1]), parse(sexp[2]));
+  } else if (sexp instanceof Array && sexp[0] === "lam") {
+    return new FundefC(sexp[1], parse(sexp[2]));
+  } else if (sexp instanceof Array && typeof sexp[0] === "string") {
     return new FunAppC(parse(sexp[0]), sexp.slice(1).map(exp => parse(exp)));
   } else if (typeof sexp === "number") {
     return new NumC(sexp);
