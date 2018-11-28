@@ -210,6 +210,26 @@ function topInterp(sexp) {
 }
 
 /**
+ * Takes a value and turns it into a string
+ * 
+ * @param {Value} val - a value from interp
+ * @retusns {String}
+ */
+function serialize(val) {
+  if (typeof val === "number") {
+    return val.toString();
+  } else if (typeof val === "boolean") {
+    return val;
+  } else if (typeof val === "string") {
+    return val;
+  } else if (val instanceof ZFunc) {
+    return "#<procedure>";
+  } else {
+    return "#<binop>";
+  }
+}
+
+/**
  * Interps an exprC
  *
  * @param {ExprC} expr - The expression to intepret
@@ -270,6 +290,7 @@ function runTests() {
   functionExprTests();
   ifCExprTests();
   parseTestCases();
+  serializeTestCases();
 }
 
 function parseTestCases() {
@@ -278,6 +299,13 @@ function parseTestCases() {
 }
 
 function topInterpTests() {}
+
+function serializeTestCases() {
+  checkEqual(serialize(34), "34");
+  checkEqual(serialize(true), "true");
+  checkEqual(serialize("strings"), "strings");
+  checkEqual(serialize(new ZFunc([], new NumC(9),[])), "#<procedure>");
+}
 
 function primopTests() {
   checkEqual(primop.add(2, 2), 4);
