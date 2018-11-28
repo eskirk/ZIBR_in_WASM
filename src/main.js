@@ -70,16 +70,25 @@ fetch("../out/main.wasm")
       false: false
     };
 
-    // call top-interp here
-    document.getElementById("input").textContent =
-      "['+', [['+', [21, 21]], ['+', [21, 21]]]]";
-    document.getElementById("result").textContent = topInterp([
-      "+",
-      [["+", [21, 21]], ["+", [21, 21]]]
-    ]);
+    input.value = '[["lam", ["x", "y"], ["`*", "`x", ["`+", "`x", "`y"]]], 3, 5]';
+    runInput();
+
     runTests();
   })
   .catch(console.error);
+
+let input = document.querySelector("input");
+let output = document.querySelector("#result");
+
+function runInput() {
+  let inText = input.value;
+  let sexp = JSON.parse(inText);
+  let result = topInterp(sexp);
+  
+  output.innerHTML = result;
+}
+
+input.addEventListener("input", () => runInput());
 
 /**
  *
@@ -211,7 +220,7 @@ function topInterp(sexp) {
 
 /**
  * Takes a value and turns it into a string
- * 
+ *
  * @param {Value} val - a value from interp
  * @retusns {String}
  */
@@ -219,7 +228,7 @@ function serialize(val) {
   if (typeof val === "number") {
     return val.toString();
   } else if (typeof val === "boolean") {
-    return val;
+    return val.toString();
   } else if (typeof val === "string") {
     return val;
   } else if (val instanceof ZFunc) {
@@ -268,7 +277,7 @@ function interp(expr, env) {
           } got ${argValues.length}.`
         );
       }
-      let newEnv = addToEnv(expr.closure, fnValue.parameters, argValues);
+      let newEnv = addToEnv(fnValue.closure, fnValue.parameters, argValues);
       return interp(fnValue.body, newEnv);
     } else if (fnValue instanceof Function) {
       if (argValues.length !== 2) {
@@ -308,7 +317,7 @@ function serializeTestCases() {
   checkEqual(serialize(34), "34");
   checkEqual(serialize(true), "true");
   checkEqual(serialize("strings"), "strings");
-  checkEqual(serialize(new ZFunc([], new NumC(9),[])), "#<procedure>");
+  checkEqual(serialize(new ZFunc([], new NumC(9), [])), "#<procedure>");
 }
 
 function primopTests() {
@@ -404,7 +413,7 @@ function parse(sexp) {
     return new IfC(parse(sexp[0]), parse(sexp[1]), parse(sexp[2]));
   } else if (sexp instanceof Array && sexp[0] === "lam") {
     return new FundefC(sexp[1], parse(sexp[2]));
-  } else if (sexp instanceof Array && typeof sexp[0] === "string") {
+  } else if (sexp instanceof Array) {
     return new FunAppC(parse(sexp[0]), sexp.slice(1).map(exp => parse(exp)));
   } else if (typeof sexp === "number") {
     return new NumC(sexp);
